@@ -11,20 +11,20 @@ This is a very simple ETL Pipeline project implemented on AWS. I tried to demons
 # What you learning
 What you should expect to learn and understand after reading this project:
 1. How to design a cloud-native data integration workflow using AWS services
-2. **Amazon S3** for data storage
-3. **AWS Glue** for data crawling and ETL
-4. **AWS Step Functions** for workflow orchestration
-5. **Amazon Redshift** for data warehousing
-6. **Amazon EventBridge** for scheduling
-7. **AWS Secrets Manager** for credential management
-8. Implementation of **Data Quality** checks during ETL process using **PySpark**
-9. **Data Transformation** using **PySpark**
-10. Creating complex, fault-tolerant workflows using **Step Functions**
+2. ***Amazon S3*** for data storage
+3. ***AWS Glue*** for data crawling and ETL
+4. ***AWS Step Functions*** for workflow orchestration
+5. ***Amazon Redshift*** for data warehousing
+6. ***Amazon EventBridge*** for scheduling
+7. ***AWS Secrets Manager*** for credential management
+8. Implementation of ***Data Quality*** checks during ETL process using ***PySpark***
+9. ***Data Transformation*** using ***PySpark***
+10. Creating complex, fault-tolerant workflows using ***Step Functions***
 11. Step Functions state machine JSON configuration
-12. **CloudFormation** template for **Infrastructure as Code**
+12. ***CloudFormation*** template for ***Infrastructure as Code***
 13. CloudFormation deployment instructions
-14. Understanding **Pricing** for some of different AWS services
-15. Strategies for **Cost Optimization**
+14. Understanding ***Pricing*** for some of different AWS services
+15. Strategies for ***Cost Optimization***
 
 --- 
 
