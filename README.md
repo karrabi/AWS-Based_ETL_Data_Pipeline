@@ -7,6 +7,8 @@ As a Data Engineer, using cloud-based services is essential. However, learning a
 
 This is a very simple ETL Pipeline project implemented on AWS. I tried to demonstrate some of the subjects that should be considered in every **Data Pipeline Solution**.
 
+---
+# What you learning
 What you should expect to learn and understand after reading this project:
 1. How to design a cloud-native data integration workflow using AWS services
 2. **Amazon S3** for data storage
@@ -24,7 +26,9 @@ What you should expect to learn and understand after reading this project:
 14. Understanding **Pricing** for some of different AWS services
 15. Strategies for **Cost Optimization**
 
-Table of contents:
+--- 
+
+# Table of contents
 - [The Challenge](#the-challenge)
 - [The Solution](#the-solution)
 - [The AWS-Based Solution Diagram](#the-aws-based-solution-diagram)
