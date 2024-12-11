@@ -1,0 +1,170 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Data Pipeline Infrastructure for Purchase Data Processing'
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: purchase-data-pipeline
+    Description: Prefix for all resource names
+
+  InputBucketName:
+    Type: String
+    Description: Name of the S3 input bucket
+    Default: purchase-data-input-bucket
+
+  ArchiveBucketName:
+    Type: String
+    Description: Name of the S3 archive bucket
+    Default: purchase-data-archive-bucket
+
+  RedshiftClusterIdentifier:
+    Type: String
+    Default: purchase-data-cluster
+    Description: Redshift cluster identifier
+
+Resources:
+  # S3 Buckets
+  InputS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref InputBucketName
+      VersioningConfiguration:
+        Status: Enabled
+
+  ArchiveS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref ArchiveBucketName
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldFiles
+            Status: Enabled
+            ExpirationInDays: 90
+
+  # IAM Roles
+  GlueJobRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: glue.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+
+  # AWS Glue Crawler
+  GlueCrawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      Name: !Sub ${ProjectName}-data-crawler
+      Role: !GetAtt GlueJobRole.Arn
+      Targets:
+        S3Targets:
+          - Path: !Ref InputBucketName
+      DatabaseName: !Ref GlueDatabase
+
+  # Glue Database
+  GlueDatabase:
+    Type: AWS::Glue::Database
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseInput:
+        Name: !Sub ${ProjectName}_database
+
+  # Glue Job
+  GlueETLJob:
+    Type: AWS::Glue::Job
+    Properties:
+      Name: !Sub ${ProjectName}-etl-job
+      Role: !GetAtt GlueJobRole.Arn
+      GlueVersion: '3.0'
+      Command:
+        Name: glueetl
+        Python: aws_glue_purchase_data_etl.py
+        ScriptLocation: !Sub s3://${InputBucketName}/scripts/aws_glue_purchase_data_etl.py
+
+  # Step Functions State Machine
+  StepFunctionsStateMachine:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: !Sub ${ProjectName}-workflow
+      DefinitionString: 
+        !Sub |
+          {
+            "Comment": "Data Pipeline Workflow",
+            "StartAt": "StartGlueCrawler",
+            "States": {
+              "StartGlueCrawler": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::glue:startCrawler.sync",
+                "Parameters": {
+                  "Name": "${ProjectName}-data-crawler"
+                },
+                "Next": "StartGlueETLJob"
+              }
+            }
+          }
+      RoleArn: !GetAtt StepFunctionsExecutionRole.Arn
+
+  # Step Functions IAM Role
+  StepFunctionsExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: states.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole
+
+  # Amazon EventBridge Rule
+  EventBridgeScheduleRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub ${ProjectName}-schedule
+      ScheduleExpression: rate(12 hours)
+      State: ENABLED
+      Targets:
+        - Arn: !Ref StepFunctionsStateMachine
+          Id: TriggerDataPipeline
+          RoleArn: !GetAtt EventBridgeStepFunctionsRole.Arn
+
+  # EventBridge IAM Role
+  EventBridgeStepFunctionsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: StepFunctionsTrigger
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: states:StartExecution
+                Resource: !Ref StepFunctionsStateMachine
+
+Outputs:
+  InputBucketName:
+    Description: Input S3 Bucket Name
+    Value: !Ref InputS3Bucket
+  
+  ArchiveBucketName:
+    Description: Archive S3 Bucket Name
+    Value: !Ref ArchiveS3Bucket
+  
+  GlueJobRoleArn:
+    Description: Glue Job Role ARN
+    Value: !GetAtt GlueJobRole.Arn

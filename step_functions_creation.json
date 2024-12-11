@@ -1,0 +1,135 @@
+{
+    "Comment": "Data Pipeline Workflow",
+    "StartAt": "StartGlueCrawler",
+    "States": {
+      "StartGlueCrawler": {
+        "Type": "Task",
+        "Resource": "arn:aws:states:::glue:startCrawler",
+        "Parameters": {
+          "Name": "purchase-data-crawler"
+        },
+        "Next": "WaitForCrawlerCompletion",
+        "Catch": [
+          {
+            "ErrorEquals": ["States.ALL"],
+            "Next": "FailureNotification"
+          }
+        ]
+      },
+      "WaitForCrawlerCompletion": {
+        "Type": "Wait",
+        "Seconds": 300,
+        "Next": "CheckCrawlerStatus"
+      },
+      "CheckCrawlerStatus": {
+        "Type": "Task",
+        "Resource": "arn:aws:states:::glue:getCrawler",
+        "Parameters": {
+          "Name": "purchase-data-crawler"
+        },
+        "Next": "IsCrawlerRunning",
+        "Catch": [
+          {
+            "ErrorEquals": ["States.ALL"],
+            "Next": "FailureNotification"
+          }
+        ]
+      },
+      "IsCrawlerRunning": {
+        "Type": "Choice",
+        "Choices": [
+          {
+            "Variable": "$.Crawler.State",
+            "StringEquals": "RUNNING",
+            "Next": "WaitForCrawlerCompletion"
+          },
+          {
+            "Variable": "$.Crawler.State",
+            "StringEquals": "READY",
+            "Next": "StartGlueETLJob"
+          }
+        ],
+        "Default": "FailureNotification"
+      },
+      "StartGlueETLJob": {
+        "Type": "Task",
+        "Resource": "arn:aws:states:::glue:startJobRun",
+        "Parameters": {
+          "JobName": "purchase-data-etl-job",
+          "Arguments": {
+            "--input_path": "s3://purchase-data-input-bucket/",
+            "--output_path": "s3://purchase-data-archive-bucket/"
+          }
+        },
+        "Next": "CheckETLJobStatus",
+        "Catch": [
+          {
+            "ErrorEquals": ["States.ALL"],
+            "Next": "FailureNotification"
+          }
+        ]
+      },
+      "CheckETLJobStatus": {
+        "Type": "Task",
+        "Resource": "arn:aws:states:::glue:getJobRun",
+        "Parameters": {
+          "JobName": "purchase-data-etl-job",
+          "RunId.$": "$.JobRunId"
+        },
+        "Next": "IsETLJobSuccessful",
+        "Catch": [
+          {
+            "ErrorEquals": ["States.ALL"],
+            "Next": "FailureNotification"
+          }
+        ]
+      },
+      "IsETLJobSuccessful": {
+        "Type": "Choice",
+        "Choices": [
+          {
+            "Variable": "$.JobRun.JobRunState",
+            "StringEquals": "SUCCEEDED",
+            "Next": "ArchiveProcessedFiles"
+          }
+        ],
+        "Default": "FailureNotification"
+      },
+      "ArchiveProcessedFiles": {
+        "Type": "Task",
+        "Resource": "arn:aws:states:::lambda:invoke",
+        "Parameters": {
+          "FunctionName": "archive-processed-files",
+          "Payload": {
+            "sourceBucket": "purchase-data-input-bucket",
+            "destBucket": "purchase-data-archive-bucket"
+          }
+        },
+        "Next": "SendSuccessNotification",
+        "Catch": [
+          {
+            "ErrorEquals": ["States.ALL"],
+            "Next": "FailureNotification"
+          }
+        ]
+      },
+      "SendSuccessNotification": {
+        "Type": "Task",
+        "Resource": "arn:aws:states:::sns:publish",
+        "Parameters": {
+          "TopicArn": "arn:aws:sns:us-east-1:123456789012:DataPipelineSuccess",
+          "Message": "Data pipeline completed successfully"
+        },
+        "End": true
+      },
+      "FailureNotification": {
+        "Type": "Task",
+        "Resource": "arn:aws:states:::sns:publish",
+        "Parameters": {
+          "TopicArn": "arn:aws:sns:us-east-1:123456789012:DataPipelineFailure",
+          "Message": "Data pipeline encountered an error"
+        },
+        "End": true
+      }
+    }
+  }
