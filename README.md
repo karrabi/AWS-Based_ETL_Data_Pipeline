@@ -6,19 +6,19 @@ As a Data Engineer, using cloud-based services is essential. However, learning a
 This is a very simple ETL Pipeline project implemented on AWS. I tried to demonstrate some of the subjects that should be considered in every **Data Pipeline Solution**.
 
 Following Guide line contains:
-[The Challenge](#the-challenge)
-[The Solution](#the-solution)
-[The AWS-Based Solution Diagram](#the-aws-based-solution-diagram)
-[Detailed explanation of Solution](#detailed-explanation-of-solution)
-[AWS Glue ETL script](./aws_glue_etl_script.py)
-[Step Functions Workflow Diagram](#step-functions-workflow-diagram)
-[Step Functions Workflow Breakdown](#step-functions-workflow-breakdown)
-[Step Functions Implementation Code](./step_functions_creation.json)
-[Deployment and Configuration Steps](#deployment-and-configuration-steps)
-[AWS CloudFormation template](./CloudFormation_template.yaml)
-[Implementation Guide through CloudFormation](#implementation-guide)
-[Solution Cost Calculation](#cost-calculation-based-on-aws-costs-at-the-time-of-preparing-this-article)
-[Project Cost Control Advises](#some-advises-to-controll-the-project-costs)
+- [The Challenge](#the-challenge)
+- [The Solution](#the-solution)
+- [The AWS-Based Solution Diagram](#the-aws-based-solution-diagram)
+- [Detailed explanation of Solution](#detailed-explanation-of-solution)
+- [AWS Glue ETL script](./aws_glue_etl_script.py)
+- [Step Functions Workflow Diagram](#step-functions-workflow-diagram)
+- [Step Functions Workflow Breakdown](#step-functions-workflow-breakdown)
+- [Step Functions Implementation Code](./step_functions_creation.json)
+- [Deployment and Configuration Steps](#deployment-and-configuration-steps)
+- [AWS CloudFormation template](./CloudFormation_template.yaml)
+- [Implementation Guide through CloudFormation](#implementation-guide)
+- [Solution Cost Calculation](#cost-calculation-based-on-aws-costs-at-the-time-of-preparing-this-article)
+- [Project Cost Control Advises](#some-advises-to-controll-the-project-costs)
 
 
 
